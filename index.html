@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tiny Math Star.io</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #6C5CE7; --secondary: #00CEC9; --accent: #FAB1A0; --bg: #F0F2F5; --gold: #FFD700; }
+        body { font-family: 'Fredoka One', cursive; background: var(--bg); margin: 0; display: flex; flex-direction: column; align-items: center; color: #2D3436; min-height: 100vh; }
+        
+        /* Login Screen */
+        #intro-screen { position: fixed; inset: 0; background: var(--primary); z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; padding: 20px; overflow-y: auto; }
+        .intro-card { background: white; color: #333; padding: 25px; border-radius: 30px; box-shadow: 0 10px 0 rgba(0,0,0,0.2); width: 90%; max-width: 380px; margin-bottom: 20px; }
+        input { width: 85%; padding: 12px; border-radius: 15px; border: 3px solid #eee; font-family: 'Fredoka One'; font-size: 1.1rem; text-align: center; margin-bottom: 10px; outline: none; }
+        input:focus { border-color: var(--secondary); }
+        
+        .leaderboard-box { background: rgba(0,0,0,0.15); border-radius: 20px; padding: 15px; width: 95%; max-width: 400px; }
+        .lb-row { display: flex; align-items: center; background: white; color: #333; margin: 8px 0; padding: 10px 15px; border-radius: 15px; gap: 12px; }
+        .lb-avatar { font-size: 1.8rem; background: #f0f0f0; border-radius: 50%; width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; border: 2px solid var(--gold); }
+        .lb-info { flex-grow: 1; display: flex; justify-content: space-between; align-items: center; }
+
+        /* Game Header */
+        header { background: var(--primary); width: 100%; padding: 10px; text-align: center; color: white; display: none; position: relative; }
+        .user-info { display: flex; justify-content: center; align-items: center; gap: 10px; background: white; padding: 8px 15px; border-radius: 50px; margin: 10px auto; width: fit-content; border: 3px solid var(--gold); }
+        #current-pfp { font-size: 2rem; background: #eee; border-radius: 50%; width: 55px; height: 55px; display: flex; align-items: center; justify-content: center; border: 3px solid var(--secondary); }
+        .star-count { color: #E17055; font-size: 1.4rem; }
+        .btn-logout { position: absolute; top: 10px; right: 10px; background: #ff7675; color: white; border: none; padding: 5px 12px; border-radius: 12px; cursor: pointer; font-family: 'Fredoka One'; }
+
+        /* General Layout */
+        .level-menu { display: none; gap: 5px; flex-wrap: wrap; justify-content: center; padding: 10px; background: #dfe6e9; width: 100%; }
+        .btn-lvl { background: white; color: var(--primary); padding: 8px 10px; border: 2px solid var(--primary); border-radius: 12px; cursor: pointer; font-family: 'Fredoka One'; font-size: 0.8rem; }
+        .btn-lvl.active { background: var(--primary); color: white; }
+        .container { background: white; width: 92%; max-width: 500px; border-radius: 30px; padding: 20px; margin: 15px; text-align: center; box-shadow: 0 8px 0 #CBD5E0; display: none; }
+        .active-view { display: block; }
+        .stage { font-size: 2.5rem; margin: 20px 0; min-height: 120px; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #fdfdfd; border: 2px dashed #ddd; border-radius: 20px; padding: 15px; line-height: 1.2; }
+        .options { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; max-width: 350px; margin: 0 auto; }
+        .btn-ans { background: #F1F2F6; font-size: 1.6rem; padding: 12px; border-radius: 15px; border: none; border-bottom: 5px solid #DFE4EA; cursor: pointer; font-family: 'Fredoka One'; }
+
+        /* Shop Grid */
+        .pfp-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+        .pfp-card { background: #fff; padding: 10px; border-radius: 20px; border: 3px solid #eee; cursor: pointer; text-align: center; transition: 0.2s; }
+        .pfp-card.owned { border-color: var(--secondary); background: #E3FAFB; }
+        .pfp-card.active-wear { border-color: var(--primary); box-shadow: 0 0 10px var(--primary); transform: scale(1.05); }
+        .cost-tag { font-size: 0.7rem; color: #d63031; display: block; margin-top: 5px; }
+
+        #feedback { position: fixed; top: 40%; font-size: 6rem; pointer-events: none; display: none; z-index: 2000; }
+    </style>
+</head>
+<body>
+
+    <div id="intro-screen">
+        <div class="intro-card">
+            <h1 style="color: var(--primary); margin:0; font-size: 1.6rem;">Scholar Login 🎓</h1>
+            <p style="font-size: 0.8rem; margin: 5px 0 15px;">New players: Pick any password!</p>
+            <input type="text" id="user-name-input" placeholder="Name..." maxlength="10">
+            <input type="password" id="user-pass-input" placeholder="Password..." maxlength="8">
+            <button onclick="startGame()" style="background:#FF7675; color:white; width:90%; padding:12px; border:none; border-radius:50px; font-size:1.2rem; font-family:'Fredoka One'; cursor:pointer; border-bottom:4px solid #d63031; margin-top:10px;">ENTER 🚀</button>
+        </div>
+
+        <div class="leaderboard-box">
+            <h2 style="margin:0 0 10px; font-size: 1.2rem; text-align: center;">🏆 Device Leaders</h2>
+            <div id="leaderboard-list"></div>
+        </div>
+    </div>
+
+    <header id="game-header">
+        <button class="btn-logout" onclick="location.reload()">LOGOUT 🚪</button>
+        <h1 id="welcome-text" style="margin:5px; font-size: 1.2rem;">HELLO!</h1>
+        <div class="user-info">
+            <div id="current-pfp">👤</div>
+            <div class="star-count">⭐ <span id="star-val">0</span></div>
+            <button class="btn-lvl" onclick="setView('shop')" style="border:none; background:var(--accent); color:white; margin-left:10px;">SHOP 🎁</button>
+        </div>
+    </header>
+
+    <div id="grade-bar" class="level-menu">
+        <button class="btn-lvl active" id="btn-lkg" onclick="setGrade('lkg')">LKG</button>
+        <button class="btn-lvl" id="btn-ukg" onclick="setGrade('ukg')">UKG</button>
+        <button class="btn-lvl" id="btn-1st" onclick="setGrade('1st')">1st</button>
+        <button class="btn-lvl" id="btn-2nd" onclick="setGrade('2nd')">2nd</button>
+        <button class="btn-lvl" id="btn-3rd" onclick="setGrade('3rd')">3rd</button>
+        <button class="btn-lvl" id="btn-4th" onclick="setGrade('4th')">4th</button>
+    </div>
+
+    <div id="game-view" class="container">
+        <h2 id="instruction" style="color:var(--primary); margin-top:0;">Ready?</h2>
+        <div id="display-area" class="stage"></div>
+        <div id="options-area" class="options"></div>
+    </div>
+
+    <div id="shop-view" class="container">
+        <h2 style="margin-top:0;">AVATAR SHOP 🐾</h2>
+        <div class="pfp-grid" id="pfp-grid"></div>
+        <button onclick="setView('game')" style="margin-top:20px; background:var(--primary); color:white; padding:10px 20px; border:none; border-radius:15px; font-family:'Fredoka One';">BACK TO PLAY</button>
+    </div>
+
+    <div id="feedback"></div>
+
+    <script>
+        let stars = 0, currentGrade = 'lkg', equippedIcon = '👤', userName = "", userPass = "";
+
+        let pfps = [
+            { icon: '🐱', cost: 40 }, { icon: '🐶', cost: 50 }, { icon: '🦁', cost: 150 }, 
+            { icon: '🦄', cost: 300 }, { icon: '🐲', cost: 500 }, { icon: '🦖', cost: 800 }, 
+            { icon: '👾', cost: 1200 }, { icon: '👑', cost: 2500 }
+        ].map(p => ({...p, owned: false}));
+
+        window.onload = updateLeaderboard;
+
+        function updateLeaderboard() {
+            const list = document.getElementById('leaderboard-list');
+            list.innerHTML = "";
+            let players = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key.startsWith('Scholar_')) {
+                    const data = JSON.parse(localStorage.getItem(key));
+                    players.push({ name: key.replace('Scholar_', ''), stars: data.stars, icon: data.equippedIcon });
+                }
+            }
+            players.sort((a,b) => b.stars - a.stars).slice(0, 5).forEach((p, idx) => {
+                list.innerHTML += `
+                    <div class="lb-row">
+                        <div class="lb-avatar">${p.icon}</div>
+                        <div class="lb-info">
+                            <strong>#${idx+1} ${p.name.toUpperCase()}</strong>
+                            <span>⭐ ${p.stars}</span>
+                        </div>
+                    </div>`;
+            });
+            if(!players.length) list.innerHTML = "<p style='text-align:center'>No scholars yet!</p>";
+        }
+
+        function startGame() {
+            const nameInput = document.getElementById('user-name-input').value.trim().toLowerCase();
+            const passInput = document.getElementById('user-pass-input').value.trim();
+            if(!nameInput || !passInput) return alert("Enter Name and Password!");
+
+            const saved = localStorage.getItem('Scholar_' + nameInput);
+            if(saved) {
+                const data = JSON.parse(saved);
+                if(data.password !== passInput) return alert("Wrong Password! ❌");
+                stars = data.stars; equippedIcon = data.equippedIcon; pfps = data.pfps;
+            } else {
+                userPass = passInput; // Set password for new user
+            }
+            
+            userName = nameInput;
+            userPass = passInput;
+            updateHeader();
+            document.getElementById('intro-screen').style.display = 'none';
+            document.getElementById('game-header').style.display = 'block';
+            document.getElementById('grade-bar').style.display = 'flex';
+            document.getElementById('game-view').classList.add('active-view');
+            nextQuestion();
+        }
+
+        function saveGame() {
+            if(!userName) return;
+            localStorage.setItem('Scholar_' + userName, JSON.stringify({
+                stars, equippedIcon, pfps, password: userPass
+            }));
+        }
+
+        function updateHeader() {
+            document.getElementById('star-val').innerText = stars;
+            document.getElementById('current-pfp').innerText = equippedIcon;
+            document.getElementById('welcome-text').innerText = `HELLO, ${userName.toUpperCase()}! 👋`;
+        }
+
+        function setGrade(grade) {
+            currentGrade = grade;
+            document.querySelectorAll('.btn-lvl').forEach(b => b.classList.remove('active'));
+            document.getElementById('btn-' + grade).classList.add('active');
+            setView('game');
+        }
+
+        function setView(view) {
+            document.getElementById('game-view').classList.toggle('active-view', view === 'game');
+            document.getElementById('shop-view').classList.toggle('active-view', view === 'shop');
+            if(view === 'game') nextQuestion(); else renderShop();
+        }
+
+        function nextQuestion() {
+            const display = document.getElementById('display-area');
+            const options = document.getElementById('options-area');
+            const instr = document.getElementById('instruction');
+            options.innerHTML = ''; display.innerHTML = '';
+            let correct; let choices = [];
+
+            if (currentGrade === 'lkg') {
+                instr.innerText = "Count them!";
+                correct = rand(1, 5); display.innerText = "⭐".repeat(correct);
+                choices = generateChoices(correct);
+            } else if (currentGrade === 'ukg') {
+                instr.innerText = "Addition!";
+                let a = rand(1, 5), b = rand(1, 5); correct = a + b;
+                display.innerHTML = `<div>${a} + ${b}</div>`;
+                choices = generateChoices(correct);
+            } else if (currentGrade === '1st') {
+                instr.innerText = "Tables!";
+                let t = [2, 5, 10][rand(0,2)], m = rand(1, 10); correct = t * m;
+                display.innerText = `${t} x ${m}`;
+                choices = generateChoices(correct);
+            } else if (currentGrade === '2nd') {
+                instr.innerText = "Multiplication!";
+                let a = rand(2, 9), b = rand(2, 9); correct = a * b;
+                display.innerText = `${a} x ${b}`;
+                choices = generateChoices(correct);
+            } else if (currentGrade === '3rd') {
+                instr.innerText = "Division!";
+                correct = rand(2, 10); let b = rand(2, 6);
+                display.innerText = `${correct * b} ÷ ${b}`;
+                choices = generateChoices(correct);
+            } else if (currentGrade === '4th') {
+                instr.innerText = "Mixed Challenge!";
+                const op = ['+','-','*','/'][rand(0,3)]; let a, b;
+                if(op==='+'){ a=rand(20,99); b=rand(20,99); correct=a+b; }
+                else if(op==='-'){ a=rand(60,150); b=rand(10,59); correct=a-b; }
+                else if(op==='*'){ a=rand(4,12); b=rand(4,12); correct=a*b; }
+                else { correct=rand(3,15); b=rand(2,9); a=correct*b; }
+                display.innerText = `${a} ${op.replace('/','÷').replace('*','x')} ${b}`;
+                choices = generateChoices(correct);
+            }
+
+            choices.forEach(c => {
+                const btn = document.createElement('button');
+                btn.className = 'btn-ans'; btn.innerText = c;
+                btn.onclick = () => checkAnswer(c === correct);
+                options.appendChild(btn);
+            });
+        }
+
+        function checkAnswer(isCorrect) {
+            const fb = document.getElementById('feedback');
+            if (isCorrect) {
+                stars += 2; document.getElementById('star-val').innerText = stars;
+                fb.innerText = '🌈'; fb.style.display = 'block';
+                saveGame();
+                setTimeout(() => { fb.style.display = 'none'; nextQuestion(); }, 700);
+            } else {
+                fb.innerText = '❌'; fb.style.display = 'block';
+                setTimeout(() => fb.style.display = 'none', 500);
+            }
+        }
+
+        function renderShop() {
+            const grid = document.getElementById('pfp-grid'); grid.innerHTML = '';
+            pfps.forEach((pfp, i) => {
+                const isEq = equippedIcon === pfp.icon;
+                const card = document.createElement('div');
+                card.className = `pfp-card ${pfp.owned ? 'owned' : ''} ${isEq ? 'active-wear' : ''}`;
+                card.onclick = () => {
+                    if(pfp.owned) { equippedIcon = pfp.icon; updateHeader(); saveGame(); renderShop(); }
+                    else if(stars >= pfp.cost) { stars -= pfp.cost; pfp.owned = true; equippedIcon = pfp.icon; updateHeader(); saveGame(); renderShop(); }
+                };
+                card.innerHTML = `<span style="font-size:2.2rem">${pfp.icon}</span><br>
+                                 <span class="cost-tag">${pfp.owned ? (isEq?'USING':'OWN') : '⭐'+pfp.cost}</span>`;
+                grid.appendChild(card);
+            });
+        }
+
+        function rand(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+        function generateChoices(correct) {
+            let s = new Set([correct]);
+            while(s.size < 4) { s.add(Math.abs(correct + (rand(0,1) ? rand(1,10) : -rand(1,5)))); }
+            return Array.from(s).sort(() => Math.random() - 0.5);
+        }
+    </script>
+</body>
+</html>
